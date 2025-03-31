@@ -1,0 +1,2 @@
+pywebview == 5.4
+Flask == 3.1.0

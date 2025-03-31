@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .doodle-btn {
+            position: relative;
+            padding: 12px 24px;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 18px;
+            background-color: #fff;
+            color: #333;
+            border: 3px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #333;
+            transition: all 0.2s ease;
+            outline: none;
+            transform: rotate(-1deg);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0,0,0,0.1) 0%, transparent 2%),
+                radial-gradient(circle at 90% 80%, rgba(0,0,0,0.1) 0%, transparent 2%);
+        }
+        
+        .doodle-btn:hover {
+            transform: rotate(1deg) translateY(-2px);
+            box-shadow: 6px 6px 0 #333;
+            background-color: #f8f8f8;
+        }
+        
+        .doodle-btn:active {
+            transform: rotate(0deg) translateY(1px);
+            box-shadow: 2px 2px 0 #333;
+        }
+        
+        /* 添加一些手绘风格的装饰元素 */
+        .doodle-btn::before {
+            content: "✏️";
+            position: absolute;
+            left: -15px;
+            top: -15px;
+            font-size: 20px;
+            transform: rotate(-15deg);
+        }
+        
+        .doodle-btn::after {
+            content: "";
+            position: absolute;
+            right: -8px;
+            bottom: -8px;
+            width: 30px;
+            height: 30px;
+            border: 2px dashed #333;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <button class="doodle-btn">点击我!</button>
+</body>
+</html>

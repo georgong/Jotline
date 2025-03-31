@@ -1,0 +1,332 @@
+.katex {
+    font-family: 'Patrick Hand', cursive !important;
+} /* latex 字体 */
+/* 开始load 按钮 */
+.doodle-btn-load {
+    position: relative;
+    padding: 12px 24px;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 18px;
+    background-color: #333; /* 反色背景 */
+    color: #fff; /* 反色文字 */
+    border: 3px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #666; /* 更深阴影 */
+    transition: all 0.2s ease;
+    outline: none;
+    transform: rotate(2deg);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.2) 0%, transparent 5%),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.2) 0%, transparent 5%);
+}
+
+.doodle-btn-load:hover {
+  transform: rotate(0deg) translateY(-2px);
+  box-shadow: 6px 6px 0 #666;
+  background-color: #444;
+}
+
+.doodle-btn-load::before {
+  content: "↓"; /* 向下箭头表示加载 */
+  position: absolute;
+  left: -12px;
+  bottom: -12px;
+  font-size: 24px;
+  transform: rotate(-10deg);
+}
+
+.doodle-btn-load::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 25px;
+  height: 25px;
+  border: 2px dashed #fff; /* 白色虚线 */
+  border-radius: 50%;
+}
+
+/* 结束load 按钮 */
+/* 开始save 按钮 */
+
+.doodle-btn {
+  position: relative;
+  padding: 12px 24px;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 18px;
+  background-color: #fff;
+  color: #333;
+  border: 3px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #333;
+  transition: all 0.2s ease;
+  outline: none;
+  transform: rotate(-1deg);
+  background-image: 
+      radial-gradient(circle at 10% 20%, rgba(0,0,0,0.1) 0%, transparent 2%),
+      radial-gradient(circle at 90% 80%, rgba(0,0,0,0.1) 0%, transparent 2%);
+}
+
+.doodle-btn:hover {
+  transform: rotate(1deg) translateY(-2px);
+  box-shadow: 6px 6px 0 #333;
+  background-color: #f8f8f8;
+}
+
+.doodle-btn:active {
+  transform: rotate(0deg) translateY(1px);
+  box-shadow: 2px 2px 0 #333;
+}
+
+
+/* 添加一些手绘风格的装饰元素 */
+.doodle-btn::before {
+  content: "✏️";
+  position: absolute;
+  left: -15px;
+  top: -15px;
+  font-size: 20px;
+  transform: rotate(-15deg);
+}
+
+.doodle-btn::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  width: 30px;
+  height: 30px;
+  border: 2px dashed #333;
+  border-radius: 50%;
+}
+
+/* 开始save 按钮 */
+
+body {
+margin: 0;
+font-family: 'Patrick Hand', cursive; /*字体*/
+background: #fefefe; /*我喜欢白色的背景*/
+display: flex;
+height: 100vh;
+} 
+
+.sidebar {
+width: 220px;
+background: #fefdf7; 
+border-right: 1px solid #eee;
+padding: 1rem;
+}
+
+.sidebar h3 {
+margin-top: 0;
+font-size: 1.1rem;
+color: #555;
+}
+
+.sidebar ul {
+list-style: none;
+padding: 0;
+}
+
+.sidebar li {
+padding: 6px 10px;
+cursor: pointer;
+border-radius: 6px;
+}
+
+.sidebar li:hover {
+background: #f0f0ee;
+}
+
+.workspace {
+flex-grow: 1;
+padding: 2rem;
+display: flex;
+justify-content: center;
+overflow-y: auto;
+}
+
+.notebook-container { 
+width: 720px;
+height: 1024px;
+background: #fffbf0;
+border-radius: 12px;
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.04);
+border: 1px solid #eee;
+padding: 2rem;
+overflow-y: auto;
+display: none;
+}
+
+.note-block {
+margin-bottom: 1.5rem;
+}
+
+textarea { /*文本框, 主要是字体*/
+width: 100%;
+font-family: 'Patrick Hand', cursive;
+font-size: 16px;
+background: transparent;
+border: none;
+outline: none;
+resize: none;
+line-height: 24px;
+padding: 4px 6px;
+}
+
+.preview-block { /*preview-block*/
+display: none;
+cursor: pointer;
+font-family: 'Patrick Hand', cursive;
+font-size: 16px;
+line-height: 24px;
+}
+
+.canvas-preview { /*canvas preview*/
+background: #ffffff;
+border: 2px dashed #8c9eff;
+border-radius: 8px;
+box-shadow: 0 0 6px rgba(140, 158, 255, 0.1);
+padding: 1rem;
+margin-bottom: 1rem;
+}
+
+.canvas-title {
+font-size: 1.1rem;
+margin-bottom: 0.5rem;
+color: #3f51b5;
+}
+
+.canvas-note {
+font-size: 1rem;
+color: #444;
+}
+
+.highlight-command {
+background: #fdf1f2;
+color: #d14b57;
+padding: 0 4px;
+border-radius: 4px;
+font-weight: bold;
+}
+
+.notebook-alert {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-1deg);
+  width: 300px;
+  background: #fff9e6;
+  border: 2px solid #8b7d6b;
+  border-radius: 4px 12px 12px 4px;
+  box-shadow: 5px 5px 0 rgba(139, 125, 107, 0.3);
+  padding: 20px;
+  z-index: 1000;
+  display: none;
+  background-image: 
+    linear-gradient(90deg, rgba(139,125,107,0.1) 1px, transparent 1px),
+    linear-gradient(rgba(139,125,107,0.1) 1px, transparent 1px);
+  background-size: 15px 15px;
+}
+
+.notebook-alert h3 {
+  margin-top: 0;
+  font-family: 'Reenie Beanie', cursive;
+  font-size: 24px;
+  color: #333;
+  background-color: rgba(255, 255, 150, 0.4);
+  display: inline-block;
+  padding: 0 10px;
+  transform: rotate(-1deg);
+  border-bottom: 2px dashed #8b7d6b;
+}
+
+.notebook-alert p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.notebook-alert-btn {
+  background: #fff;
+  border: 2px solid #8b7d6b;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-family: 'Comic Sans MS', cursive;
+  font-size: 16px;
+  cursor: pointer;
+  float: right;
+  transform: rotate(1deg);
+  transition: all 0.2s;
+}
+
+.notebook-alert-btn:hover {
+  background: #f0e6cc;
+  transform: rotate(0deg) scale(1.05);
+}
+
+.notebook-alert::before {
+  content: "📎";
+  position: absolute;
+  left: -10px;
+  top: 10px;
+  transform: rotate(-45deg);
+  font-size: 20px;
+}
+
+.notebook-alert::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 50px;
+  height: 3px;
+  background: repeating-linear-gradient(
+    to right,
+    #8b7d6b,
+    #8b7d6b 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  transform: rotate(5deg);
+}
+
+.alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.1);
+  z-index: 999;
+  display: none;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Reenie+Beanie&display=swap');
+
+
+.underline-container {
+  margin-top: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.pencil-line {
+  stroke: #111;
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+li:not(.active-page) .pencil-line {
+  stroke-dashoffset: 300;
+}
+
+li.active-page .pencil-line {
+  stroke-dashoffset: 0;
+}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>CanvasNote 编辑器（最终修复版 v0.3.2）</title>
+  <link href="https://https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static',filename = 'styles.css') }}" />
+</head>
+<body>
+  <div class="sidebar">
+    <h3>📂 页面导航</h3>
+      <!-- 后面从load中替换 -->
+      <ul id="page-list"></ul>
+  </div>
+
+  <div class="workspace">
+    <div class="notebook-container" id="inbox"></div>
+    <div class="notebook-container" id="canvas_ds190"></div>
+    <div class="notebook-container" id="canvas_timeline"></div>
+  </div>
+  <!-- 加载和保存按钮 -->
+  <div style="margin-top: 2rem; text-align: center; display: flex; flex-direction: column; gap: 1rem;">
+    <button class="doodle-btn-load" onclick="load_note()">Load Note</button>
+    <button class="doodle-btn" onclick="save_note()">Save Note</button>
+  </div>
+
+
+  <div class="alert-overlay" id="alertOverlay"></div>
+
+<div class="notebook-alert" id="customAlert">
+  <h3>📢 提示</h3>
+  <p id="alertMessage">这是一个弹窗内容</p>
+  <button class="notebook-alert-btn" onclick="closeAlert()">知道了</button>
+  <div style="clear: both;"></div>
+</div>
+
+
+  <script>
+// CanvasNote 主逻辑整理版（支持页面顺序 + 名称保存，inbox 固定首位）
+
+// =============================
+// 🔁 页面与导航管理
+// =============================
+let pageMap = [
+  ["inbox", "📝 随手记"],
+  ["canvas_ds190", "📘 DS190 Canvas"],
+  ["canvas_timeline", "📐 时间轴 Canvas"]
+];
+
+
+function renderSidebar() {
+  const ul = document.getElementById('page-list');
+  ul.innerHTML = '';
+  pageMap.forEach(([id, label]) => {
+    const li = document.createElement('li');
+    li.dataset.pageId = id;
+
+    const span = document.createElement('span');
+    span.className = 'sidebar-label';
+    span.textContent = label;
+
+    const underlineContainer = document.createElement('div');
+    underlineContainer.className = 'underline-container';
+    underlineContainer.innerHTML = `
+      <svg width="100%" height="12" viewBox="0 0 300 20">
+        <path class="pencil-line" d="M0,10 C30,5 60,15 90,10 C120,5 150,15 180,10 C210,5 240,15 270,10 C290,15 300,5 300,10" />
+      </svg>
+    `;
+
+    li.appendChild(span);
+    li.appendChild(underlineContainer);
+    li.onclick = () => switchPage(id);
+    ul.appendChild(li);
+  });
+}
+
+function switchPage(id) {
+  document.querySelectorAll('.notebook-container').forEach(div => div.style.display = 'none');
+  const target = document.getElementById(id);
+  if (!target) return;
+  target.style.display = 'block';
+
+  target.querySelectorAll('.note-block').forEach(block => {
+    const textarea = block.querySelector('textarea');
+    const preview = block.querySelector('.preview-block');
+    if (textarea && textarea.style.display !== 'none' && preview.innerHTML.trim() === "") {
+      renderBlockFromTextarea(textarea, preview);
+    }
+  });
+
+  document.querySelectorAll('.sidebar li').forEach(li => {
+    li.classList.remove('active-page');
+    const line = li.querySelector('.pencil-line');
+    if (line) line.style.strokeDashoffset = '300';
+  });
+
+  const activeLi = document.querySelector(`.sidebar li[data-page-id="${id}"]`);
+  if (activeLi) {
+    activeLi.classList.add('active-page');
+    const line = activeLi.querySelector('.pencil-line');
+    if (line) line.style.strokeDashoffset = '0';
+  }
+}
+
+function switchCanvasRelative(offset) {
+  const keys = pageMap.map(([id]) => id);
+  const currentId = document.querySelector('.sidebar li.active-page')?.dataset.pageId;
+  const currentIndex = keys.indexOf(currentId);
+  if (currentIndex === -1) return;
+  const nextId = keys[(currentIndex + offset + keys.length) % keys.length];
+  switchPage(nextId);
+}
+
+function openCanvasSearch() {
+  const query = prompt("🔍 输入 Canvas 名称片段");
+  if (!query) return;
+  const matched = pageMap.find(([id, label]) => id.includes(query) || label.includes(query));
+  matched ? switchPage(matched[0]) : showAlert(`未找到匹配的页面：${query}`);
+}
+
+function createNewCanvas() {
+  //const name = prompt("🆕 新页面名称");
+  const name = "newcanvas"
+  if (!name) return;
+  const id = `canvas_${Date.now()}`;
+  pageMap.push([id, "📄 " + name]);
+
+  const container = document.createElement("div");
+  container.className = "notebook-container";
+  container.id = id;
+  document.querySelector('.workspace').appendChild(container);
+  createNoteBlock(container, "");
+  renderSidebar();
+  switchPage(id);
+}
+
+// =============================
+// 📝 Block 渲染与交互
+// =============================
+function createNoteBlock(container, initial = "") {
+  const wrapper = document.createElement("div");
+  wrapper.className = "note-block";
+
+  const textarea = document.createElement("textarea");
+  textarea.value = initial;
+
+  const preview = document.createElement("div");
+  preview.className = "preview-block";
+
+  textarea.addEventListener("input", () => {
+    autoResize(textarea);
+    hasChanges = true;
+  });
+  textarea.addEventListener("blur", () => renderBlockFromTextarea(textarea, preview));
+
+  preview.addEventListener("click", () => {
+    textarea.style.display = "block";
+    preview.style.display = "none";
+    autoResize(textarea);
+    textarea.focus();
+  });
+
+  wrapper.appendChild(textarea);
+  wrapper.appendChild(preview);
+  container.appendChild(wrapper);
+  autoResize(textarea);
+}
+
+async function callLLM(prompt) {
+  const res = await fetch("/llm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+  const data = await res.json();
+  return data.reply;
+}
+
+function renderBlockFromTextarea(textarea, preview) {
+  const val = textarea.value.trim();
+  if (!val) return;
+  const matches = [...val.matchAll(/(\\\[[^\]]+])/g)];
+  const aiReplies = [...val.matchAll(/\[AI\]/g)];
+
+  if (matches.length > aiReplies.length) {
+    const nextPrompt = matches[aiReplies.length][1]; // 对应下一个未回复的
+    callLLM(nextPrompt).then(reply => {
+      const replyText = `\n\n[AI] ${reply}`;
+      textarea.value += replyText;
+      hasChanges = true;
+      renderBlockFromTextarea(textarea, preview); // 递归触发下一条
+    });
+    return;
+  }
+  const split = splitBlocks(val);
+  preview.innerHTML = "";
+
+  split.forEach(block => {
+    const div = document.createElement("div");
+    if (block.type === 'canvas') {
+      div.className = "canvas-preview";
+      div.innerHTML = `
+        <div class="canvas-title">📘 [${block.attrs.type}] ${block.attrs.title || "未命名 Canvas"}</div>
+        <div class="canvas-note">${marked.parse(preprocessHighlightCommands(block.content))}</div>
+      `;
+    } else {
+      div.className = "canvas-note";
+      div.innerHTML = marked.parse(preprocessHighlightCommands(block.content));
+    }
+    preview.appendChild(div);
+  });
+
+  renderMathInElementSafe(preview);
+  textarea.style.display = "none";
+  preview.style.display = "block";
+}
+
+function autoResize(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = Math.max(textarea.scrollHeight, 40) + "px";
+}
+
+function splitBlocks(rawText) {
+  const blocks = [];
+  const canvasRegex = /:::canvas([^\n]*)\n([\s\S]*?)\n?:::/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = canvasRegex.exec(rawText)) !== null) {
+    const start = match.index;
+    const end = canvasRegex.lastIndex;
+    if (start > lastIndex) {
+      blocks.push({ type: 'markdown', content: rawText.slice(lastIndex, start).trim() });
+    }
+    const attrLine = match[1].trim();
+    const content = match[2].trim();
+    const attrs = {};
+    attrLine.split(/\s+/).forEach(pair => {
+      const [k, v] = pair.split('=');
+      if (k && v) attrs[k] = v.replace(/"/g, '');
+    });
+    blocks.push({ type: 'canvas', attrs, content, raw: match[0] });
+    lastIndex = end;
+  }
+  if (lastIndex < rawText.length) {
+    blocks.push({ type: 'markdown', content: rawText.slice(lastIndex).trim() });
+  }
+  return blocks;
+}
+
+function preprocessHighlightCommands(rawText) {
+  return rawText.replace(/\\\[(.+?)\]/g, (_, p1) => {
+    return `<span class="highlight-command">\\[${p1}]</span>`;
+  });
+}
+
+function renderMathInElementSafe(target) {
+  if (typeof renderMathInElement === "function") {
+    renderMathInElement(target, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ],
+      throwOnError: false
+    });
+  }
+}
+
+// =============================
+// 💾 存储与恢复
+// =============================
+let hasChanges = false
+
+function getAllNotes() {
+  const pages = {};
+  const notes = {};
+  pageMap.forEach(([id, name]) => {
+    const container = document.getElementById(id);
+    if (!container) return;
+    const blocks = container.querySelectorAll('.note-block textarea');
+    notes[id] = Array.from(blocks).map(t => t.value);
+    pages[id] = name;
+  });
+  return { pages, notes };
+}
+
+function save_note() {
+  const data = getAllNotes();
+  fetch('/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+    .then(res => res.json())
+    .then(json => {
+      showAlert(json.status === "success" ? "💾 本地 JSON 保存成功！" : "⚠️ 保存失败！");
+    })
+    .catch(err => {
+      console.error(err);
+      showAlert("❌ 无法连接后端保存文件！");
+    });
+}
+
+function load_note() {
+  fetch('/load')
+    .then(res => res.json())
+    .then(json => {
+      if (json.status === 'success') {
+        const { pages, notes } = json.data;
+        pageMap = Object.entries(pages);
+
+        // 固定 inbox 在最前面
+        const index = pageMap.findIndex(([id]) => id === 'inbox');
+        if (index > 0) {
+          const inboxEntry = pageMap.splice(index, 1)[0];
+          pageMap.unshift(inboxEntry);
+        }
+
+        document.querySelectorAll('.notebook-container').forEach(c => c.remove());
+
+        Object.entries(notes).forEach(([pageId, blocks]) => {
+          let container = document.getElementById(pageId);
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'notebook-container';
+            container.id = pageId;
+            document.querySelector('.workspace').appendChild(container);
+          }
+          blocks.forEach(text => createNoteBlock(container, text));
+        });
+
+        renderSidebar();
+        switchPage('inbox');
+        showAlert("📂 笔记已加载！");
+      } else {
+        showAlert(json.status === 'empty' ? "📭 没有保存的笔记文件！" : "⚠️ 加载失败：" + json.message);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      showAlert("❌ 加载失败，无法连接后端！");
+    });
+}
+
+// =============================
+// 📢 Alert 系统
+// =============================
+function showAlert(message = "已完成操作") {
+  document.getElementById("alertMessage").textContent = message;
+  document.getElementById("customAlert").style.display = "block";
+  document.getElementById("alertOverlay").style.display = "block";
+}
+
+function closeAlert() {
+  document.getElementById("customAlert").style.display = "none";
+  document.getElementById("alertOverlay").style.display = "none";
+}
+
+// =============================
+// ⌨️ 快捷键
+// =============================
+document.addEventListener("keydown", function(e) {
+  const isInput = e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT";
+  if (e.ctrlKey && e.code === "ArrowUp") {
+    e.preventDefault();
+    window.alert("⬆️ Ctrl + ArrowUp 被触发");
+    switchCanvasRelative(-1);
+  } else if (e.ctrlKey && e.code === "ArrowDown") {
+    e.preventDefault();
+    window.alert("⬇️ Ctrl + ArrowDown 被触发");
+    switchCanvasRelative(1);
+  } else if (e.ctrlKey && e.code === "KeyK") {
+    e.preventDefault();
+    window.alert("🔍 Ctrl + K 搜索页面触发");
+    openCanvasSearch();
+  } else if (e.ctrlKey && e.code === "KeyN") {
+    e.preventDefault();
+    createNewCanvas();
+  } else if (e.code === "Escape") {
+    window.alert("⛔ ESC 被触发");
+    closeAlert();
+  } else if (e.ctrlKey && e.code === "Enter") {
+    if (isInput) {
+      e.preventDefault();
+      window.alert("🖋 Ctrl + Enter 渲染当前 block");
+      const wrapper = e.target.closest('.note-block');
+      if (wrapper) {
+        const preview = wrapper.querySelector('.preview-block');
+        renderBlockFromTextarea(e.target, preview);
+      }
+    }
+  }
+});
+
+// =============================
+// 🚀 初始化
+// =============================
+renderSidebar();
+pageMap.forEach(([id]) => {
+  const container = document.getElementById(id);
+  if (container) createNoteBlock(container, "");
+});
+switchPage('inbox');
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "pages": {
+    "inbox": "📝 随手记",
+    "canvas_ds190": "📘 DS190 Canvas",
+    "canvas_timeline": "📐 时间轴 Canvas"
+  },
+  "notes": {
+    "inbox": [
+      "### \\[highlight]\n### markdown text\n\n### $$1+1+1+1 = 4$$\n"
+    ],
+    "canvas_ds190": [
+      ":::canvas type=lecture_note title=\"高斯分布\":::\n高斯分布对称，峰值在 $\\\\mu=0$，方差为 $\\\\sigma^2$\n:::\n\n# new text"
+    ],
+    "canvas_timeline": [
+      ":::canvas type=timeline title=\"今日任务\":::\n@09:00 - 阅读论文  \n@14:00 - \\[联系导师]\n:::\n\n## markdown text"
+    ]
+  }
+}
